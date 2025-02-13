@@ -15,6 +15,7 @@
         <testng.version>7.10.2</testng.version>
         <rest-assured.version>5.5.0</rest-assured.version>
         <lombok.vesion>1.18.36</lombok.vesion>
+        <allure.vesion>2.29.1</allure.vesion>
     </properties>
     <dependencies>
         <dependency>
@@ -33,6 +34,11 @@
             <artifactId>lombok</artifactId>
             <version>${lombok.vesion}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-testng</artifactId>
+            <version>${allure.vesion}</version>
         </dependency>
     </dependencies>
 

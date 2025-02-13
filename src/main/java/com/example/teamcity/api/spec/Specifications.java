@@ -1,6 +1,6 @@
 package com.example.teamcity.api.spec;
 
-import com.example.teamcity.api.config.Config;
+import com.example.teamcity.api.config.Configuration;
 import com.example.teamcity.api.models.User;
 import io.restassured.authentication.BasicAuthScheme;
 import io.restassured.builder.RequestSpecBuilder;
@@ -27,7 +27,7 @@ public class Specifications {
 
     private RequestSpecBuilder reqBuilder() {
         RequestSpecBuilder reqBuilder = new RequestSpecBuilder();
-        reqBuilder.setBaseUri("http://" + Config.getProperty("host")).build();
+        reqBuilder.setBaseUri("http://" + Configuration.getProperty("host")).build();
         reqBuilder.setContentType(ContentType.JSON);
         reqBuilder.setAccept(ContentType.JSON);
         reqBuilder.addFilters(List.of(new RequestLoggingFilter(), new ResponseLoggingFilter()));
