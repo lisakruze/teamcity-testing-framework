@@ -1,14 +1,16 @@
 package com.example.teamcity.api;
 
+import com.example.teamcity.api.generators.RoleGenerator;
+import com.example.teamcity.api.generators.TestDataGenerator;
 import com.example.teamcity.api.models.*;
 import com.example.teamcity.api.requests.CheckedRequests;
 import com.example.teamcity.api.requests.unchecked.UncheckedBase;
 import com.example.teamcity.api.spec.Specifications;
-import org.apache.http.HttpStatus;
-import org.hamcrest.Matchers;
+import com.example.teamcity.api.spec.ValidationResponseSpecifications;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import static com.example.teamcity.api.enums.Endpoint.*;
@@ -40,42 +42,55 @@ public class BuildTypeTest extends BaseApiTest {
         var userCheckRequests = new CheckedRequests(Specifications.authSpec(testData.getUser()));
 
         userCheckRequests.<Project>getRequest(PROJECTS).create(testData.getProject());
-
         userCheckRequests.getRequest(BUILD_TYPES).create(testData.getBuildType());
         new UncheckedBase(Specifications.authSpec(testData.getUser()), BUILD_TYPES)
                 .create(buildTypeWithSameId)
-                .then().assertThat().statusCode(HttpStatus.SC_BAD_REQUEST)
-                .body(Matchers.containsString("The build configuration / template ID \"%s\" is already used by another configuration or template".formatted(testData.getBuildType().getId())));
+                .then().spec(ValidationResponseSpecifications.checkBuildConfigurationAlreadyUsed(testData.getBuildType().getId()));
     }
 
     @Test(description = "Project admin should be able to create build type for their project", groups = {"Positive", "Roles"})
     public void projectAdminCreatesBuildTypeTest() {
-        Project project = superUserCheckRequest.<Project>getRequest(PROJECTS).create(testData.getProject());
-        testData.getUser().setRoles(new Roles(List.of(new Role("PROJECT_ADMIN", "p:" + project.getId()))));
+        Project createdProject = superUserCheckRequest.<Project>getRequest(PROJECTS).create(testData.getProject());
+        Role projectAdmin = RoleGenerator.generateProjectAdmin(createdProject.getId());
+        testData.getUser().setRoles(new Roles(List.of(projectAdmin)));
+
         User user = (User) superUserCheckRequest.getRequest(USERS).create(testData.getUser());
         user.setPassword(testData.getUser().getPassword());
+
         CheckedRequests userCheckRequests = new CheckedRequests(Specifications.authSpec(user));
-        BuildType buildTypeProject = generate(List.of(project), BuildType.class);
+        BuildType buildTypeProject = generate(List.of(createdProject), BuildType.class);
         userCheckRequests.getRequest(BUILD_TYPES).create(buildTypeProject);
-        BuildType createdBuildType = userCheckRequests.<BuildType>getRequest(BUILD_TYPES).read(buildTypeProject.getId());
-        softy.assertEquals(buildTypeProject.getName(), createdBuildType.getName(), "BuildType name is not correct");
-        softy.assertEquals(user.getRoles().getRole().get(0).getRoleId(), "PROJECT_ADMIN", "User role is not PROJECT_ADMIN");
+
+        softy.assertEquals(createdProject, testData.getProject());
+        softy.assertEquals(user.getRoles(), testData.getUser().getRoles());
     }
 
     @Test(description = "Project admin should not be able to create build type for a project they do not manage", groups = {"Negative", "Roles"})
     public void projectAdminCannotCreateBuildTypeForOtherProjectTest() {
-        Project adminProject = generate(Project.class);
+
+        HashMap<Integer, TestData> testDataMap = TestDataGenerator.generateHashMap(2);
+
+        Project adminProject = testDataMap.get(0).getProject();
+        Project otherProject = testDataMap.get(1).getProject();
+
+        User admin = testDataMap.get(0).getUser();
+
         superUserCheckRequest.getRequest(PROJECTS).create(adminProject);
-        Project otherProject = generate(Project.class);
         superUserCheckRequest.getRequest(PROJECTS).create(otherProject);
-        testData.getUser().setRoles(new Roles(List.of(new Role("PROJECT_ADMIN", "p:" + adminProject.getId()))));
-        User user = (User) superUserCheckRequest.getRequest(USERS).create(testData.getUser());
-        user.setPassword(testData.getUser().getPassword());
+
+        Role projectAdmin = RoleGenerator.generateProjectAdmin(adminProject.getId());
+        admin.setRoles(new Roles(List.of(projectAdmin)));
+
+        User createdUser = (User) superUserCheckRequest.getRequest(USERS).create(admin);
+
+        softy.assertEquals(admin.getRoles(), createdUser.getRoles());
+
+        admin.setId(createdUser.getId());
+
         BuildType buildTypeProject = generate(List.of(otherProject), BuildType.class);
-        new UncheckedBase(Specifications.authSpec(user), BUILD_TYPES)
+        new UncheckedBase(Specifications.authSpec(admin), BUILD_TYPES)
                 .create(buildTypeProject)
-                .then().assertThat().statusCode(HttpStatus.SC_FORBIDDEN)
-                .body(Matchers.containsString(String.format("You do not have enough permissions to edit project with id: %s", otherProject.getId())));
+                .then().spec(ValidationResponseSpecifications.checkUserCanNotEditProject(otherProject.getId()));
     }
 
 }
