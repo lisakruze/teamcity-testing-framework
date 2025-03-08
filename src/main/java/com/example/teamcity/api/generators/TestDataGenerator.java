@@ -8,10 +8,7 @@ import com.example.teamcity.api.models.TestData;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public final class TestDataGenerator {
 
@@ -88,12 +85,29 @@ public final class TestDataGenerator {
         return generate(Collections.emptyList(), generatorClass, parameters);
     }
 
+
+    public static <T extends BaseModel> HashMap<Integer, T> generateHashMap(Class<T> generatorClass, int count, Object... parameters) {
+        HashMap<Integer, T> map = new HashMap<>(count);
+        for (int i = 0; i < count; i++) {
+            map.put(i, generate(generatorClass, parameters));
+        }
+        return map;
+    }
+
+    public static HashMap<Integer, TestData> generateHashMap(int count) {
+        HashMap<Integer, TestData> map = new HashMap<>(count);
+        for (int i = 0; i < count; i++) {
+            map.put(i, generate());
+        }
+        return map;
+    }
+
     public static TestData generate() {
         // Идем по всем полям TestData и для каждого, кто наследник BaseModel вызывыем generate() c передачей уже сгенерированных сущностей
         try {
             var instance = TestData.class.getDeclaredConstructor().newInstance();
             var generatedModels = new ArrayList<BaseModel>();
-            for (var field: TestData.class.getDeclaredFields()) {
+            for (var field : TestData.class.getDeclaredFields()) {
                 field.setAccessible(true);
                 if (BaseModel.class.isAssignableFrom(field.getType())) {
                     var generatedModel = generate(generatedModels, field.getType().asSubclass(BaseModel.class));
@@ -103,7 +117,8 @@ public final class TestDataGenerator {
                 field.setAccessible(false);
             }
             return instance;
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                 NoSuchMethodException e) {
             throw new IllegalStateException("Cannot generate test data", e);
         }
     }
