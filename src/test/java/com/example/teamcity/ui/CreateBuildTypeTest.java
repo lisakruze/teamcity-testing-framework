@@ -1,12 +1,14 @@
 package com.example.teamcity.ui;
 
 import com.codeborne.selenide.Condition;
+import com.codeborne.selenide.SelenideElement;
 import com.example.teamcity.api.models.BuildType;
 import com.example.teamcity.api.models.Project;
 import com.example.teamcity.api.requests.CheckedRequests;
 import com.example.teamcity.api.requests.unchecked.UncheckedBase;
 import com.example.teamcity.api.spec.Specifications;
 import com.example.teamcity.api.spec.ValidationResponseSpecifications;
+import com.example.teamcity.ui.errors.UiErrors;
 import com.example.teamcity.ui.pages.BuildsTypePage;
 import com.example.teamcity.ui.pages.admin.CreateBuildTypePage;
 import lombok.val;
@@ -56,10 +58,11 @@ public class CreateBuildTypeTest extends BaseUiTest {
         var userCheckedRequests = new CheckedRequests(Specifications.authSpec(testData.getUser()));
         var createdProject = userCheckedRequests.<Project>getRequest(PROJECTS).create(testData.getProject());
         step("UI: Create build type and validate error");
-        val errorText = CreateBuildTypePage.open(createdProject.getId())
+        SelenideElement error = CreateBuildTypePage.open(createdProject.getId())
                 .createFormUnvalidated(WRONG_REPO_URL)
-                .getRepoUrlValidationErrorText();
-        softy.assertEquals(errorText, "Cannot create a project using the specified URL. The URL is not recognized.");
+                        .getRepoUrlValidationErrorElement();
+
+        ValidateElement.byText(error, UiErrors.BUILD_CONFIG_URL_NOT_RECOGNIZED, softy);
         step("API: Check build type was not created");
         new UncheckedBase(Specifications.authSpec(testData.getUser()), BUILD_TYPES)
                 .read("project:" + createdProject.getId())

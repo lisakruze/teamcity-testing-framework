@@ -33,4 +33,8 @@ public class CreateBuildTypePage extends CreateBasePage {
         return errorErl.text();
     }
 
+    public SelenideElement getRepoUrlValidationErrorElement() {
+        return errorErl;
+    }
+
 }
