@@ -21,4 +21,9 @@ public abstract class CreateBasePage extends BasePage {
         connectionSuccessfulMessage.should(Condition.appear, BASE_WAITING);
     }
 
+    protected void baseCreateFormUnvalidated(String url) {
+        urlInput.val(url);
+        submitButton.click();
+    }
+
 }
