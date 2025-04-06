@@ -18,6 +18,7 @@ import static com.example.teamcity.api.enums.Endpoint.BUILD_TYPES;
 import static com.example.teamcity.api.enums.Endpoint.PROJECTS;
 import static io.qameta.allure.Allure.step;
 
+@Test(groups = {"Regression"})
 public class CreateBuildTypeTest extends BaseUiTest {
     private static final String REPO_URL = "https://github.com/AlexPshe/spring-core-for-qa";
     private static final String WRONG_REPO_URL = "123";

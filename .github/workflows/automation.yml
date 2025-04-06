@@ -37,7 +37,7 @@ jobs:
       - name: Run tests
         continue-on-error: true
         # Указываем группу, чтобы не запустить тесты, связанные с сетапом TeamCity
-        run: ./mvnw test -Dgroups=Regression
+        run: ./mvnw test -Dtest='com.example.teamcity.${{ inputs.package }}.**' -Dgroups=Regression
       - name: Make swagger-coverage-commandline executable
         run: chmod +x .swagger-coverage-commandline/bin/swagger-coverage-commandline
           # Создаем репорт с покрытием API тестов, основанном на Swagger.
